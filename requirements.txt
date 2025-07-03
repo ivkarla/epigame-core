@@ -1,0 +1,10 @@
+numpy
+pandas
+scikit-learn
+joblib
+matplotlib
+scipy
+openpyxl           
+h5py
+pytest>=7.0     
+-e .
