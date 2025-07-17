@@ -1,4 +1,4 @@
-from utils import struct, REc
+from epigame.utils import struct, REc
 import os
 import numpy as np
 from joblib import Parallel, delayed

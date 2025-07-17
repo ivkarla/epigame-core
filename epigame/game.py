@@ -118,7 +118,7 @@ def run_game(
                     matches.extend([c for c in contacts if c in resection])
                 return matches
             resection_match = {
-                player: contacts_in_resection(group_scores[player])
+                player: contacts_in_resection(player)
                 for player in group_scores
             }
         return resection_match

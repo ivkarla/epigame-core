@@ -1,12 +1,11 @@
-from epigame.utils import Record
+from epigame.utils import Record, REc
 import os, re
 from pickle import load
-from connectivity import preprocess_from_mat, run_connectivity_matrices
-from cross_validation import run_classification_pipeline
-from aggregate_scores import aggregate_cv_scores
-from game import run_game
-from outcome_prediction import run_outcome_prediction
-from utils import REc
+from epigame.connectivity import preprocess_from_mat, run_connectivity_matrices
+from epigame.cross_validation import run_classification_pipeline
+from epigame.aggregate_scores import aggregate_cv_scores
+from epigame.game import run_game
+from epigame.outcome_prediction import run_outcome_prediction
 
 #Paths
 main_folder = "data/output"
@@ -37,12 +36,12 @@ if missing:
     raise FileNotFoundError(msg)
 
 # Detect all subject IDs based on interictal files
-subject_ids = sorted({
-    int(re.match(r"(\d+)_interictal\.mat", f).group(1))
-    for f in os.listdir(input_folder)
-    if re.match(r"\d+_interictal\.mat", f)
-})
-print(f"Found {len(subject_ids)} subjects: {subject_ids}")
+# subject_ids = sorted({
+#     int(re.match(r"(\d+)_interictal\.mat", f).group(1))
+#     for f in os.listdir(input_folder)
+#     if re.match(r"\d+_interictal\.mat", f)
+# })
+# print(f"Found {len(subject_ids)} subjects: {subject_ids}")
 
 # #Step 1: Connectivity analysis
 # for subject_id in subject_ids:
@@ -89,24 +88,32 @@ print(f"Found {len(subject_ids)} subjects: {subject_ids}")
 #     output_csv=cvs_csv
 # )
 
-#Step 4: Game simulation
-for subject_id in subject_ids:
-    print(f"\nRunning game simulation for subject {subject_id}")
-    run_game(
-        subject_id=subject_id,
-        main_folder=main_folder,
-        output_dir=game_scores_dir,
-        RESECTION=RESECTION,
-        NODES=NODES,
-        max_sigma=4
-    )
+# #Step 4: Game simulation
+# for subject_id in subject_ids:
+#     print(f"\nRunning game simulation for subject {subject_id}")
+#     run_game(
+#         subject_id=subject_id,
+#         main_folder=main_folder,
+#         output_dir=game_scores_dir,
+#         RESECTION=RESECTION,
+#         NODES=NODES,
+#         max_sigma=4
+#     )
+
+subject_ids = []
+pattern = re.compile(r"^scores_sub(\d+)\.p$")
+for filename in os.listdir(game_scores_dir):
+    match = pattern.match(filename)
+    if match:
+        subject_id = int(match.group(1))
+        subject_ids.append(subject_id)
 
 #Step 5: Outcome prediction
-# print(f"\nRunning outcome prediction")
-# run_outcome_prediction(
-#     score_dir=game_scores_dir,
-#     subject_ids=subject_ids,
-#     sigma=4,
-#     max_n_cms=5,
-#     outcome_path=outcome_path
-# )
+print(f"\nRunning outcome prediction")
+run_outcome_prediction(
+    score_dir=game_scores_dir,
+    subject_ids=subject_ids,
+    sigma=4,
+    max_n_cms=1,
+    outcome_path=outcome_path
+)
