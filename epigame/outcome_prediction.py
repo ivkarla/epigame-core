@@ -48,25 +48,53 @@ def compute_mean_scores_per_subject(data, selected_cms, target_sigma, outcome_df
 def compute_roc_auc(X, y):
     return roc_auc_score(y, X) if len(set(y)) > 1 else np.nan
 
+from sklearn.metrics import roc_curve, confusion_matrix, f1_score, roc_auc_score
+
 def run_outcome_prediction(score_dir, subject_ids, sigma=4, max_n_cms=5, outcome_path="data/input/outcomes.xlsx"):
     data = load_all_subjects_scores(score_dir, subject_ids)
     outcome_df = pd.read_excel(outcome_path)
     all_cms = sorted(set(cm for (cm, s) in data if s == sigma))
 
     results = []
-    for k in range(1, max_n_cms+1):
+
+    for k in range(1, max_n_cms + 1):
         for subset in combinations(all_cms, k):
             X, y, subjects = compute_mean_scores_per_subject(data, subset, sigma, outcome_df)
+
             if len(X) > 0:
-                auc = compute_roc_auc(X, y)
+                # Compute ROC AUC
+                auc = roc_auc_score(y, X)
+
+                # Compute Youden's J
+                fpr, tpr, thresholds = roc_curve(y, X)
+                j_scores = tpr - fpr
+                best_idx = np.argmax(j_scores)
+                best_thresh = thresholds[best_idx]
+
+                # Binarize predictions
+                y_pred = (X >= best_thresh).astype(int)
+
+                # Compute confusion matrix & F1
+                tn, fp, fn, tp = confusion_matrix(y, y_pred).ravel()
+                f1 = f1_score(y, y_pred)
+
                 results.append({
                     'CM_combination': subset,
                     'n_CMs': k,
+                    'sigma': sigma,
                     'ROC_AUC': auc,
+                    'Best_threshold': best_thresh,
+                    'TP': tp,
+                    'FP': fp,
+                    'TN': tn,
+                    'FN': fn,
+                    'F1': f1,
                     'N_subjects': len(subjects)
                 })
+
     df_results = pd.DataFrame(results).sort_values(by='ROC_AUC', ascending=False)
     df_results.to_excel("data/output/outcome_prediction_results.xlsx", index=False)
 
     return df_results
+
 
